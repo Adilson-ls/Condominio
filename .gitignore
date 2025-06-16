@@ -1,9 +1,0 @@
-.env
-node_mode_modules
-dist
-.DS_Store
-*.log
-coverage
-*.env
-*.local
-*.test.js
