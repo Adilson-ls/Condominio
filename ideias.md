@@ -269,3 +269,6 @@ API de Paginação e Filtragem de Dados: Crie uma API para facilitar a pesquisa 
 Sistema de Gerenciamento de Projetos de TI: Construa um sistema para equipes de desenvolvimento de TI.
 
 API de Reservas de Voos: Implemente uma API para reservas de voos e itinerários.
+
+
+outra ideias [https://github.com/florinpop17/app-ideas]
