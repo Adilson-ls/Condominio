@@ -1,0 +1,152 @@
+openapi: 3.0.0
+info:
+  title: API de Gestão de Condomínios
+  version: 1.0.0
+  description: API RESTful para gerenciar condomínios, moradores, finanças e comunicação.
+servers:
+  - url: http://localhost:3001/api/v1
+    description: Servidor de Desenvolvimento
+tags:
+  - name: Autenticação
+    description: Gerenciamento de usuários e tokens de acesso.
+  - name: Condomínios
+    description: Gestão de informações de condomínios.
+  - name: Moradores
+    description: Gestão de unidades e moradores.
+  - name: Financeiro
+    description: Boletos, despesas e relatórios financeiros.
+paths:
+  /auth/register:
+    post:
+      summary: Registrar um novo usuário.
+      tags:
+        - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '201':
+          description: Usuário registrado com sucesso.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  email:
+                    type: string
+        '400':
+          description: Erro de validação ou usuário já existe.
+
+  /auth/login:
+    post:
+      summary: Autenticar usuário e obter token JWT.
+      tags:
+        - Autenticação
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login bem-sucedido.
+          headers:
+            x-auth-token:
+              schema:
+                type: string
+              description: Token de autenticação JWT.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '401':
+          description: Credenciais inválidas.
+
+  /condominiums:
+    get:
+      summary: Listar todos os condomínios (apenas para administradores).
+      tags:
+        - Condomínios
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Lista de condomínios.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Condominium'
+        '401':
+          description: Não autorizado.
+
+# ... Outros endpoints (POST /condominiums, GET /condominiums/{id}, PUT /condominiums/{id}, DELETE /condominiums/{id})
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Condominium:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          description: Nome do condomínio
+        address:
+          type: string
+          description: Endereço completo
+        cnpj:
+          type: string
+          description: CNPJ do condomínio
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [admin, syndic, resident]
+# ... Outros schemas (Unit, Bill, Expense, Notice, Occurrence)
