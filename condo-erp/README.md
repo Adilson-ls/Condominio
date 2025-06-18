@@ -59,7 +59,7 @@ npm start # ou yarn start
 Abra um novo terminal e navegue até o diretório frontend/:
 
 ```bash
-cd frontend
+cd
 
 # Instale as dependências:
 npm install # ou yarn
