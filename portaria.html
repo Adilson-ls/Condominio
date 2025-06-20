@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração - App de Controle de Portaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Warm Neutral & Slate -->
+    <!-- Application Structure Plan: A single-page dashboard application. A fixed sidebar navigation allows users to switch between different "views" (Dashboard, Access, Packages, Reservations, Admin). This task-oriented structure was chosen because it directly mirrors the real-world workflows of a concierge, making it highly intuitive. Users can see a high-level overview on the dashboard and then dive into specific management tasks. This is more effective than just showing data tables, as it demonstrates the application's flow and functionality. -->
+    <!-- Visualization & Content Choices: The plan uses a mix of static info, interactive lists, and charts. Goal: Inform -> Method: Key stats cards. Goal: Compare -> Method: Donut chart for access types (Chart.js). Goal: Organize -> Method: Interactive two-column list for packages (JS DOM manipulation), simulating status changes. Goal: Change over Time -> Method: Bar chart for reservations (Chart.js) to show availability. Goal: Explain Process -> Method: HTML/CSS diagrams for automation flows. These choices provide a dynamic and clear visualization of the AppSheet plan's features, all rendered using HTML, Tailwind, and Chart.js, with no SVG or Mermaid. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .chart-container { position: relative; width: 100%; max-width: 500px; margin-left: auto; margin-right: auto; height: 300px; max-height: 350px; }
+        @media (min-width: 768px) { .chart-container { height: 320px; } }
+        .sidebar-icon { width: 24px; height: 24px; }
+        .nav-item.active { background-color: #e5e7eb; color: #1f2937; }
+        .nav-item { transition: all 0.2s ease-in-out; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar de Navegação -->
+        <aside class="w-20 md:w-64 bg-white text-gray-600 flex flex-col border-r">
+            <div class="h-20 flex items-center justify-center border-b">
+                <span class="text-xl font-bold text-gray-800 hidden md:block">Portaria App</span>
+                <span class="text-2xl font-bold text-gray-800 md:hidden">PA</span>
+            </div>
+            <nav class="flex-1 px-2 md:px-4 py-4 space-y-2">
+                <a href="#dashboard" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-200 active">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    <span class="ml-4 font-medium hidden md:block">Painel</span>
+                </a>
+                <a href="#acessos" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-200">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span class="ml-4 font-medium hidden md:block">Acessos</span>
+                </a>
+                <a href="#encomendas" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-200">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m0 0v10l8 4m-8-14h16"></path></svg>
+                    <span class="ml-4 font-medium hidden md:block">Encomendas</span>
+                </a>
+                <a href="#reservas" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-200">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    <span class="ml-4 font-medium hidden md:block">Reservas</span>
+                </a>
+                <a href="#cadastros" class="nav-item flex items-center p-3 rounded-lg hover:bg-gray-200">
+                    <svg class="sidebar-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M15 21a6 6 0 00-9-5.197M15 11a4 4 0 110-8 4 4 0 010 8z"></path></svg>
+                    <span class="ml-4 font-medium hidden md:block">Cadastros</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Conteúdo Principal -->
+        <main class="flex-1 overflow-y-auto bg-gray-50">
+            <div id="dashboard" class="page p-6 md:p-8">
+                <h1 class="text-3xl font-bold text-gray-900">Painel de Controle</h1>
+                <p class="mt-2 text-gray-600">Visão geral do status da portaria em tempo real.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-500">Encomendas na Portaria</h3>
+                        <p id="encomendas-pendentes" class="text-3xl font-semibold text-blue-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-500">Acessos Hoje</h3>
+                        <p id="acessos-hoje" class="text-3xl font-semibold text-green-600 mt-2">0</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-500">Reservas para Hoje</h3>
+                        <p id="reservas-hoje" class="text-3xl font-semibold text-purple-600 mt-2">0</p>
+                    </div>
+                     <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h3 class="text-sm font-medium text-gray-500">Moradores Ativos</h3>
+                        <p id="moradores-ativos" class="text-3xl font-semibold text-yellow-600 mt-2">0</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h2 class="text-xl font-semibold mb-4">Tipos de Acesso (Últimos 7 dias)</h2>
+                        <p class="text-sm text-gray-600 mb-4">Este gráfico mostra a proporção de cada tipo de acesso registrado. Ele ajuda a entender os padrões de movimento no condomínio. Passe o mouse sobre as seções para ver os totais.</p>
+                        <div class="chart-container">
+                            <canvas id="acessosChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                         <h2 class="text-xl font-semibold mb-4">Fluxo de Automação</h2>
+                         <p class="text-sm text-gray-600 mb-4">O sistema pode automatizar tarefas repetitivas. Abaixo, um exemplo de como a notificação de encomendas funciona, eliminando a necessidade de avisos manuais e garantindo que o morador seja informado instantaneamente.</p>
+                         <div class="space-y-4 mt-6">
+                            <div class="flex items-center">
+                                <div class="bg-blue-100 text-blue-700 p-3 rounded-lg">Nova Encomenda Registrada</div>
+                                <div class="text-gray-400 mx-4 font-mono">--&gt;</div>
+                                <div class="bg-gray-200 p-3 rounded-lg">Gatilho Ativado</div>
+                                <div class="text-gray-400 mx-4 font-mono">--&gt;</div>
+                                <div class="bg-green-100 text-green-700 p-3 rounded-lg">Email Enviado ao Morador</div>
+                            </div>
+                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="acessos" class="page hidden p-6 md:p-8">
+                <h1 class="text-3xl font-bold text-gray-900">Controle de Acessos</h1>
+                <p class="mt-2 text-gray-600">Aqui você visualiza todos os registros de entrada e saída de visitantes e prestadores de serviço. O objetivo é manter um histórico detalhado e seguro de quem acessa o condomínio.</p>
+                 <div class="mt-8 bg-white p-6 rounded-xl border border-gray-200">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Registros Recentes</h2>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Registrar Nova Entrada</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="border-b bg-gray-50">
+                                    <th class="p-3">Visitante</th>
+                                    <th class="p-3">Tipo</th>
+                                    <th class="p-3">Destino</th>
+                                    <th class="p-3">Entrada</th>
+                                    <th class="p-3">Saída</th>
+                                </tr>
+                            </thead>
+                            <tbody id="acessos-table">
+                                <!-- Preenchido via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="encomendas" class="page hidden p-6 md:p-8">
+                <h1 class="text-3xl font-bold text-gray-900">Gestão de Encomendas</h1>
+                 <p class="mt-2 text-gray-600">Esta seção demonstra o fluxo de gerenciamento de encomendas. A portaria registra a chegada de um pacote, que aparece na coluna "Na Portaria". O morador é notificado, e ao retirar, o porteiro registra a saída, movendo o item para "Entregue".</p>
+                <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <h2 class="text-2xl font-semibold mb-4 text-center">Na Portaria</h2>
+                        <div id="encomendas-a-retirar" class="space-y-4 p-4 bg-blue-50 rounded-lg min-h-[300px]">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="text-2xl font-semibold mb-4 text-center">Entregues</h2>
+                         <div id="encomendas-retiradas" class="space-y-4 p-4 bg-green-50 rounded-lg min-h-[300px]">
+                            <!-- Preenchido via JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="reservas" class="page hidden p-6 md:p-8">
+                <h1 class="text-3xl font-bold text-gray-900">Reservas de Espaços</h1>
+                <p class="mt-2 text-gray-600">Visualize a disponibilidade dos espaços de lazer e gerencie os agendamentos. O gráfico abaixo mostra as reservas confirmadas para os próximos dias, permitindo um planejamento visual e evitando conflitos de agenda.</p>
+                <div class="mt-8 bg-white p-6 rounded-xl border border-gray-200">
+                     <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">Ocupação nos Próximos 7 Dias</h2>
+                        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">Fazer Nova Reserva</button>
+                    </div>
+                    <div class="chart-container h-[400px] max-h-[450px]">
+                        <canvas id="reservasChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cadastros" class="page hidden p-6 md:p-8">
+                <h1 class="text-3xl font-bold text-gray-900">Cadastros Base</h1>
+                <p class="mt-2 text-gray-600">A base de dados do sistema. Aqui ficariam as informações de moradores e dos espaços de lazer, que são usadas em todas as outras partes do aplicativo, como na seleção de destino para uma encomenda ou na reserva de um espaço.</p>
+                <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h2 class="text-xl font-semibold mb-4">Moradores</h2>
+                        <ul id="moradores-list" class="space-y-3"></ul>
+                    </div>
+                    <div class="bg-white p-6 rounded-xl border border-gray-200">
+                        <h2 class="text-xl font-semibold mb-4">Espaços de Lazer</h2>
+                        <ul id="espacos-list" class="space-y-3"></ul>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // --- DADOS MOCK ---
+            const mockData = {
+                moradores: [
+                    { id: 'm1', nome: 'Ana Silva', apt: '101', bloco: 'A', status: 'Ativo' },
+                    { id: 'm2', nome: 'Bruno Costa', apt: '102', bloco: 'A', status: 'Ativo' },
+                    { id: 'm3', nome: 'Carlos Dias', apt: '201', bloco: 'B', status: 'Ativo' },
+                    { id: 'm4', nome: 'Daniela Souza', apt: '202', bloco: 'B', status: 'Inativo' },
+                    { id: 'm5', nome: 'Eduardo Lima', apt: '301', bloco: 'C', status: 'Ativo' },
+                ],
+                acessos: [
+                    { visitante: 'Empresa de Internet', tipo: 'Prestador de Serviço', destino: '201', entrada: '2025-06-20T09:05:00', saida: '2025-06-20T10:00:00' },
+                    { visitante: 'Marcos Andrade', tipo: 'Visitante', destino: '101', entrada: '2025-06-20T11:20:00', saida: null },
+                    { visitante: 'iFood', tipo: 'Entrega', destino: '301', entrada: '2025-06-20T12:15:00', saida: '2025-06-20T12:20:00' },
+                    { visitante: 'Juliana Rocha', tipo: 'Visitante', destino: '102', entrada: '2025-06-19T19:30:00', saida: '2025-06-19T22:00:00' },
+                    { visitante: 'Encanador Sr. Mário', tipo: 'Prestador de Serviço', destino: '202', entrada: '2025-06-18T14:00:00', saida: '2025-06-18T15:30:00' },
+                    { visitante: 'Amazon', tipo: 'Entrega', destino: '101', entrada: '2025-06-17T16:00:00', saida: '2025-06-17T16:05:00' },
+                ],
+                encomendas: [
+                    { id: 'e1', apt: '101', desc: 'Caixa Média - Amazon', chegada: new Date(), status: 'Na Portaria' },
+                    { id: 'e2', apt: '301', desc: 'Envelope - Documento', chegada: new Date(), status: 'Na Portaria' },
+                    { id: 'e3', apt: '102', desc: 'Pacote Pequeno - Mercado Livre', chegada: new Date(Date.now() - 86400000), status: 'Entregue', retirada: new Date() },
+                ],
+                espacos: [
+                    { id: 'sp1', nome: 'Salão de Festas', capacidade: 50 },
+                    { id: 'sp2', nome: 'Churrasqueira Gourmet', capacidade: 20 },
+                    { id: 'sp3', nome: 'Quadra Poliesportiva', capacidade: 10 },
+                ],
+                reservas: [
+                    { espaco: 'Salão de Festas', data: new Date(Date.now() + 86400000 * 2) }, // Daqui a 2 dias
+                    { espaco: 'Churrasqueira Gourmet', data: new Date() }, // Hoje
+                    { espaco: 'Churrasqueira Gourmet', data: new Date(Date.now() + 86400000 * 4) },
+                    { espaco: 'Quadra Poliesportiva', data: new Date(Date.now() + 86400000 * 1) },
+                ]
+            };
+
+            // --- NAVEGAÇÃO ---
+            const navItems = document.querySelectorAll('.nav-item');
+            const pages = document.querySelectorAll('.page');
+
+            function showPage(hash) {
+                pages.forEach(page => page.classList.add('hidden'));
+                navItems.forEach(item => item.classList.remove('active'));
+                
+                const activePage = document.querySelector(hash);
+                const activeNavItem = document.querySelector(`.nav-item[href="${hash}"]`);
+
+                if (activePage) activePage.classList.remove('hidden');
+                if (activeNavItem) activeNavItem.classList.add('active');
+            }
+
+            navItems.forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const hash = e.currentTarget.getAttribute('href');
+                    window.location.hash = hash;
+                });
+            });
+
+            window.addEventListener('hashchange', () => {
+                const hash = window.location.hash || '#dashboard';
+                showPage(hash);
+            });
+
+            // --- RENDERIZAÇÃO INICIAL ---
+            function init() {
+                const hash = window.location.hash || '#dashboard';
+                showPage(hash);
+                renderDashboard();
+                renderAcessos();
+                renderEncomendas();
+                renderReservasChart();
+                renderCadastros();
+            }
+
+            // --- FUNÇÕES DE RENDERIZAÇÃO ---
+            function renderDashboard() {
+                document.getElementById('encomendas-pendentes').textContent = mockData.encomendas.filter(e => e.status === 'Na Portaria').length;
+                const todayStr = new Date().toISOString().split('T')[0];
+                document.getElementById('acessos-hoje').textContent = mockData.acessos.filter(a => a.entrada.startsWith(todayStr)).length;
+                document.getElementById('reservas-hoje').textContent = mockData.reservas.filter(r => r.data.toISOString().split('T')[0] === todayStr).length;
+                document.getElementById('moradores-ativos').textContent = mockData.moradores.filter(m => m.status === 'Ativo').length;
+                renderAcessosChart();
+            }
+
+            function renderAcessos() {
+                const tableBody = document.getElementById('acessos-table');
+                tableBody.innerHTML = '';
+                mockData.acessos.slice(0, 5).forEach(acesso => {
+                    const row = `
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="p-3 font-medium">${acesso.visitante}</td>
+                            <td class="p-3"><span class="px-2 py-1 text-xs rounded-full ${acesso.tipo === 'Visitante' ? 'bg-blue-100 text-blue-800' : acesso.tipo === 'Prestador de Serviço' ? 'bg-yellow-100 text-yellow-800' : 'bg-purple-100 text-purple-800'}">${acesso.tipo}</span></td>
+                            <td class="p-3">Apto ${acesso.destino}</td>
+                            <td class="p-3">${new Date(acesso.entrada).toLocaleString('pt-BR')}</td>
+                            <td class="p-3">${acesso.saida ? new Date(acesso.saida).toLocaleString('pt-BR') : '<span class="text-red-500">Pendente</span>'}</td>
+                        </tr>
+                    `;
+                    tableBody.innerHTML += row;
+                });
+            }
+
+            function renderEncomendas() {
+                const aRetirarContainer = document.getElementById('encomendas-a-retirar');
+                const retiradasContainer = document.getElementById('encomendas-retiradas');
+                aRetirarContainer.innerHTML = '';
+                retiradasContainer.innerHTML = '';
+
+                mockData.encomendas.forEach(enc => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-4 rounded-lg border flex justify-between items-center';
+                    card.innerHTML = `
+                        <div>
+                            <p class="font-semibold">${enc.desc}</p>
+                            <p class="text-sm text-gray-600">Para Apto ${enc.apt}</p>
+                            <p class="text-xs text-gray-400">Chegou em: ${new Date(enc.chegada).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        ${enc.status === 'Na Portaria' ? `<button data-id="${enc.id}" class="retirar-btn bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600 text-sm">Registrar Retirada</button>` : `<span class="text-sm text-green-700">Entregue</span>`}
+                    `;
+                    if (enc.status === 'Na Portaria') {
+                        aRetirarContainer.appendChild(card);
+                    } else {
+                        retiradasContainer.appendChild(card);
+                    }
+                });
+
+                document.querySelectorAll('.retirar-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const id = e.target.dataset.id;
+                        const encomenda = mockData.encomendas.find(enc => enc.id === id);
+                        if (encomenda) {
+                            encomenda.status = 'Entregue';
+                            encomenda.retirada = new Date();
+                            renderEncomendas();
+                            renderDashboard();
+                        }
+                    });
+                });
+            }
+            
+            function renderCadastros() {
+                const moradoresList = document.getElementById('moradores-list');
+                moradoresList.innerHTML = '';
+                mockData.moradores.forEach(m => {
+                    const item = `<li class="flex justify-between items-center p-2 rounded hover:bg-gray-100"><span>${m.nome} - Apto ${m.apt}</span> <span class="text-sm ${m.status === 'Ativo' ? 'text-green-600' : 'text-red-600'}">${m.status}</span></li>`;
+                    moradoresList.innerHTML += item;
+                });
+                
+                const espacosList = document.getElementById('espacos-list');
+                espacosList.innerHTML = '';
+                mockData.espacos.forEach(e => {
+                    const item = `<li class="p-2 rounded hover:bg-gray-100">${e.nome} (Cap. ${e.capacidade})</li>`;
+                    espacosList.innerHTML += item;
+                });
+            }
+
+            // --- GRÁFICOS ---
+            function renderAcessosChart() {
+                const ctx = document.getElementById('acessosChart').getContext('2d');
+                const tipos = mockData.acessos.reduce((acc, curr) => {
+                    acc[curr.tipo] = (acc[curr.tipo] || 0) + 1;
+                    return acc;
+                }, {});
+
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: Object.keys(tipos),
+                        datasets: [{
+                            data: Object.values(tipos),
+                            backgroundColor: ['#3b82f6', '#f59e0b', '#8b5cf6'],
+                            borderColor: '#ffffff',
+                            borderWidth: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+
+            function renderReservasChart() {
+                const ctx = document.getElementById('reservasChart').getContext('2d');
+                const labels = [];
+                const today = new Date();
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + i);
+                    labels.push(date.toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit' }));
+                }
+
+                const data = labels.map((label, index) => {
+                    const date = new Date(today);
+                    date.setDate(today.getDate() + index);
+                    const dateStr = date.toISOString().split('T')[0];
+                    return mockData.reservas.filter(r => r.data.toISOString().split('T')[0] === dateStr).length;
+                });
+
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Nº de Reservas',
+                            data: data,
+                            backgroundColor: '#a78bfa',
+                            borderRadius: 4,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            }
+
+            init();
+        });
+    </script>
+</body>
+</html>
